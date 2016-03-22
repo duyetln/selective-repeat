@@ -31,13 +31,13 @@ error(char *msg) {
   exit(1);
 }
 
-#define SEQ_NUM(p) ((p[0]<<8)|p[1])
-#define LENGTH(p) (((p[2]<<8)|p[3])>>4)
+#define SEQ_NUM(p) ((p[0]<<8)+p[1])
+#define LENGTH(p) (((p[2]<<8)+p[3])>>4)
 #define FIRST(p) ((p[3]>>1)&1)
 #define END(p) (p[3]&1)
 
 char *
-DATA(char *packet) {
+DATA(unsigned char *packet) {
   unsigned int len = LENGTH(packet);
   if (len > 0) {
     char *data = (char *)calloc(1, len);
@@ -89,7 +89,7 @@ enqueue_data_packet(data_packet_t *head, data_packet_t p) {
 void
 send_ack(unsigned int seq_num, unsigned int acc_seq_num, int sckt, struct sockaddr_in *send_addr, socklen_t send_addr_len) {
   unsigned int len = 4;
-  char ack[len];
+  unsigned char ack[len];
   ack[0] = (seq_num >> 8) & 255;
   ack[1] =  seq_num & 255;
   ack[2] = (acc_seq_num >> 8) & 255;
@@ -132,7 +132,7 @@ main(int argc, char **argv) {
 
   int sckt;
   unsigned int packet_len;
-  char packet[MAXPACKETSIZE];
+  unsigned char packet[MAXPACKETSIZE];
 
   data_packet_t queue = NULL;
   unsigned char complete = 0;
@@ -155,7 +155,7 @@ main(int argc, char **argv) {
 
   for(;;) {
     if (DEBUG)
-      printf("\nListening\n");
+      printf("\n");
 
     memset(packet, 0, MAXPACKETSIZE);
     packet_len = recvfrom(sckt, packet, MAXPACKETSIZE, 0, (struct sockaddr *)&send_addr, &send_addr_len);
@@ -214,8 +214,7 @@ main(int argc, char **argv) {
     if (acc_seq_num == end_seq_num && !complete) {
       write_to_file(queue, filename);
       complete = 1;
-      if (DEBUG)
-        printf("File transfer complete\n");
+      printf("File transfer complete\n");
     }
   }
 
